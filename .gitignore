@@ -1,7 +1,2 @@
 /.vscode
-/builtin.o
-/command.o
-/main.o
-/prompt.o
-/tokenize.o
-/util.o
+*.o

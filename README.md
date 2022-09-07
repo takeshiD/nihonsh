@@ -1,12 +1,34 @@
 # nihonsh
-のんべえのためのシェル。
 酔っ払ってても扱えるシェルを目指します。
-酔っ払っている状態に限らず使用者が正常な判断が出来ない状態でシェルを扱うのは大変危険です。使用者が正常な状態でなくとも安全を確保するために様々なフェイルセーフを備えたシェル、それがnihonshです。umeshと迷いました。
+umeshと迷いました。
 
 # 開発方針
 1. 酒を飲みながら開発をすること
 2. 週1日以上の休肝日を設けること
-3. 呑んでるのミスを書き残しておくこと
+3. 呑んでるときのミスを書き残しておくこと
+
+# 機能
+* execute command
+```sh
+$ cd ./programs
+```
+
+* pipeline
+```sh
+$ ls -la | grep -e "kern" | 
+```
+
+* redirect
+```
+$ ls -la > ./output.txt
+$ command < ./input.txt
+```
+
+* complement
+```sh
+$ systemc # tab-complement
+$ systemctl 
+```
 
 # 呑んでるときのミス集
 1. `rm -rf /`やっちゃった
