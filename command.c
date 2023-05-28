@@ -63,12 +63,12 @@ void exec_cmd(Cmd *cmd)
         perror("fork(2) failed");
         exit(EXIT_FAILURE);
     }
-    if(pid == 0){
+    if(pid == 0){ // 親プロセス
         execvp(cmd->argv[0], cmd->argv);
         perror("execvp(3) failed");
         exit(EXIT_FAILURE);
     }
-    if(pid > 0){
+    if(pid > 0){ // 子プロセス
         int status;
         pid_t ret = waitpid(pid, &status, 0);
         if(ret < 0){
