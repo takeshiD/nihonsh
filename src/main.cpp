@@ -2,28 +2,18 @@
 #include <sys/wait.h>
 #include <iostream>
 #include <vector>
-#include <memory>
 
-class Command {
-public:
-    int argc;
-    std::vector<char*> argv;
-    Command* next;
-    Command(): argc(0), argv(), next(nullptr) {}
-    Command(int _argc, std::vector<char*> _argv, Command* _next): argc(argc), argv(_argv), next(next) {}
-};
-
-void execute_command(char** cmd)
+void execute_command(std::vector<char*> cmd)
 {
     pid_t pid = fork();
-    if(pid < 0){
+    if(pid < 0){ // fork失敗
         std::cerr << "[Error] fork(2) failed" << std::endl;
         exit(EXIT_FAILURE);
     }
-    if(pid == 0){
-        execve(cmd[0], cmd, environ);
+    if(pid == 0){ // 親プロセス
+        execvp(cmd[0], cmd.data());
     }
-    if(pid > 0){
+    if(pid > 0){ // 子プロセス
         int status;
         pid_t ret = waitpid(pid, &status, 0);
         if(ret < 0){
@@ -45,5 +35,7 @@ void execute_command(char** cmd)
 
 int main(int argc, char** argv)
 {
+    std::vector<char*> cmd = {"ls", "-la"};
+    execute_command(cmd);
     return 0;
 }
