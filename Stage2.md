@@ -1,9 +1,19 @@
 # パイプライン, リダイレクト
+
+## dup
+![](/images/dup2.svg)
+
+## pipe
+![](/images/pipe.svg)
+
 ## パイプライン
+
 ```sh
-cmd1 | cmd2 | cmd3
-# [cmd1, cmd2, cmd3]
+cmd1 | cmd2
 ```
+
+![](/images/pipeline.svg)
+
 
 ## リダイレクト
 ```sh
@@ -30,31 +40,4 @@ cmd1; cmd2;         # [cmd1]->exec, [cmd2]->exec
 cmd1 < file         # 
 cmd1 > file         #
 cmd1 >> file        #
-```
-
-# Command構造体
-
-```cpp
-enum class CommandType{
-    HEAD,
-    TAIL,
-    REDIRECT,
-    PIPE
-};
-
-class Command {
-    int capa = 1024;
-public:
-    int argc;
-    char** argv;
-    CommandType cmdtype;
-    Command* next;
-    Command(): arg(0), argv(NULL), cmdtype(CommandHEAD){}
-    Command(int _argc, char** _argv, CommandType _cmdtype, Command* _next): argc(argc), argv(_argv), cmdtype(_cmdtype), next(next) {}
-};
-
-class CommandList {
-public:
-    Command* head;
-};
 ```
