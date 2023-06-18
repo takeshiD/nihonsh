@@ -33,6 +33,8 @@ cmd &>> file        # stdout,stderrをfileに入れて追加書き込み。
 cmd >> file 2>&1    # 同上
 ```
 
+![](/images/redirect.svg)
+
 # 解析 parsing
 ```sh
 cmd1 | cmd2 | cmd3  # [cmd1, cmd2, cmd3]
