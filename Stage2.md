@@ -59,6 +59,23 @@ expr := cmd (ctrl expr)?
 cmd  := ID cmd*
 ctrl := PIPE | REDIRECT_IN | REDIRECT_OUT
 
+### 構文規則(bash base)
+inputunit := simple_list '\n'
+    | '\n'
+    | EOF
+    ;
+simple_list := simple_list1
+    | simple_list1 '&'
+    | simple_list1 ';'
+    ;
+simple_list1 := simple_list1 AND_AND newlines simple_list1
+    | simple_list1 OR_OR newlines simple_list1
+    | simple_list1 '&' simple_list1
+    | simple_list1 ';' simple_list1
+    | pipeline
+    | BANG pipeline
+    ;
+
 (確認)
 "ls -la | grep"
 -> "ls":ID, "-la":ID, "|":PIPE ,"grep":ID

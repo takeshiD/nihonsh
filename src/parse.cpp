@@ -6,11 +6,13 @@
 #include <sys/wait.h>
 #include <algorithm>
 #include <string.h>
+#include <functional>
+#include "builtin.h"
 
 Command::Command(): argc(0), argv(), status(-1), pid(-1), kind(CommandKind::EXECUTE){}
 Command::Command(std::vector<char*> _argv, CommandKind _kind): status(-1), pid(-1), kind(_kind)
 {
-    this->argc = _argv.size();
+    this->argc = _argv.size()-1;
     this->argv = _argv;
 }
 
@@ -225,6 +227,15 @@ CommandList parse(TokenList tknlist)
     return cmdlist;
 }
 
+void execute(int argc, char* argv[])
+{
+    builtin_t* blt = lookup_builtin(argv[0]);
+    if(blt == nullptr){
+        execvp(argv[0], argv);
+    }else{
+        blt->func(argc, argv);
+    }
+}
 void execute_pipeline(CommandList& cmdlist)
 {
     int fds1[2] = {-1, -1};
@@ -251,10 +262,11 @@ void execute_pipeline(CommandList& cmdlist)
             close(fds2[0]);
             
         }
-        execvp(cmd.argv[0], cmd.argv.data());
+        execute(cmd.argc, cmd.argv.data());
         std::cerr << "execvp error(" << errno << "): " << cmd << std::endl;
     }
 }
+
 void wait_pipeline(CommandList& cmdlist)
 {
     std::for_each(cmdlist.rbegin(), cmdlist.rend(), [](Command cmd){

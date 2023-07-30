@@ -97,6 +97,8 @@ std::ostream& operator<<(std::ostream& stream, const CommandList& cmdlist);
 std::ostream& operator<<(std::ostream& stream, const Token& tkn);
 std::ostream& operator<<(std::ostream& stream, const TokenList& tknlist);
 
+bool is_space(char* c);
+
 TokenList tokenize(char* line);
 CommandList parse(TokenList tknlist);
 void invoke_command(CommandList& cmdlist);

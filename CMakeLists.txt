@@ -9,9 +9,14 @@ add_executable(${TARGET}
     src/main.cpp
     src/parse.cpp
     src/prompt.cpp
+    src/complete.cpp
+    src/builtin.cpp
 )
 target_include_directories(${TARGET} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+target_link_libraries(${TARGET} PUBLIC
+    curses
 )
 
 include(FetchContent)
@@ -25,6 +30,7 @@ FetchContent_MakeAvailable(googletest)
 set(TEST_NAME test-${PROJECT_NAME})
 add_executable(${TEST_NAME}
     src/parse.cpp tests/test_parse.cpp
+    src/builtin.cpp
 )
 target_link_libraries(${TEST_NAME} gtest_main)
 target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
