@@ -5,12 +5,15 @@ project(nihonsh
 )
 set(CMAKE_CXX_STANDARD 14)
 set(TARGET nish)
-add_executable(${TARGET}
-    src/main.cpp
-    src/parse.cpp
+set(SRCS
     src/prompt.cpp
+    src/parse.cpp
     src/complete.cpp
     src/builtin.cpp
+)
+add_executable(${TARGET}
+    src/main.cpp
+    ${SRCS}
 )
 target_include_directories(${TARGET} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -28,11 +31,17 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 set(TEST_NAME test-${PROJECT_NAME})
-add_executable(${TEST_NAME}
-    src/parse.cpp tests/test_parse.cpp
-    src/builtin.cpp
+set(TESTS
+    tests/test_parse.cpp
 )
-target_link_libraries(${TEST_NAME} gtest_main)
+add_executable(${TEST_NAME}
+    ${SRCS}
+    ${TESTS}
+)
+target_link_libraries(${TEST_NAME}
+    gtest_main
+    curses
+)
 target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 enable_testing()

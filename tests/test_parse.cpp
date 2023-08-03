@@ -5,7 +5,7 @@
 #include "parse.h"
 
 /*********   Success Case  *********/
-TEST(COMMAND, CONSRUCTOR)
+TEST(COMMAND, CONSTRUCTOR)
 {
     Command cmd1;
     EXPECT_EQ(cmd1.argc, 0);
@@ -20,7 +20,7 @@ TEST(COMMAND, CONSRUCTOR)
     EXPECT_EQ(cmd2.status, -1);
     EXPECT_EQ(cmd2.pid, -1);
 }
-TEST(COMMANDLIST, CONSRUCTOR)
+TEST(COMMANDLIST, APPEND)
 {
     CommandList cmdlist;
     cmdlist.append({"ls", "-la"}, CommandKind::EXECUTE);
@@ -29,6 +29,10 @@ TEST(COMMANDLIST, CONSRUCTOR)
     EXPECT_STREQ(cmdlist.at(0).argv[0], "ls");
     EXPECT_STREQ(cmdlist.at(1).argv[0], "grep");
     EXPECT_STREQ(cmdlist.at(2).argv[0], "head");
+    EXPECT_EQ(cmdlist.at(0).argc, 2);
+    EXPECT_EQ(cmdlist.at(1).argc, 3);
+    EXPECT_EQ(cmdlist.at(2).argc, 3);
+
 }
 
 TEST(TOKENIZE, NO_INPUT)
@@ -41,11 +45,41 @@ TEST(TOKENIZE, NO_INPUT)
 
 TEST(TOKENIZE, SINGLE)
 {
-    char line[256] = "ls";
+    char line[256] = "exit";
     TokenList tknlist = tokenize(line);
     EXPECT_EQ(tknlist.size(), 1);
-    EXPECT_STREQ(tknlist.at(0).str, "ls");
+    EXPECT_STREQ(tknlist.at(0).str, "exit");
     EXPECT_EQ(tknlist.at(0).kind, TokenKind::ID);
+}
+
+TEST(TOKENIZE, REDIRECT_OUT_NEW)
+{
+    char line[256] = "ls > result.txt";
+    TokenList tknlist = tokenize(line);
+    EXPECT_EQ(tknlist.size(), 3);
+
+    EXPECT_STREQ(tknlist.at(0).str, "ls");
+    EXPECT_STREQ(tknlist.at(1).str, ">");
+    EXPECT_STREQ(tknlist.at(2).str, "result.txt");
+    
+    EXPECT_EQ(tknlist.at(0).kind, TokenKind::ID);
+    EXPECT_EQ(tknlist.at(1).kind, TokenKind::REDIRECT_OUT_NEW);
+    EXPECT_EQ(tknlist.at(2).kind, TokenKind::ID);
+}
+
+TEST(TOKENIZE, REDIRECT_OUT_ADD)
+{
+    char line[256] = "ls >> result.txt";
+    TokenList tknlist = tokenize(line);
+    EXPECT_EQ(tknlist.size(), 3);
+
+    EXPECT_STREQ(tknlist.at(0).str, "ls");
+    EXPECT_STREQ(tknlist.at(1).str, ">>");
+    EXPECT_STREQ(tknlist.at(2).str, "result.txt");
+    
+    EXPECT_EQ(tknlist.at(0).kind, TokenKind::ID);
+    EXPECT_EQ(tknlist.at(1).kind, TokenKind::REDIRECT_OUT_ADD);
+    EXPECT_EQ(tknlist.at(2).kind, TokenKind::ID);
 }
 
 
@@ -89,6 +123,8 @@ TEST(TOKENIZE, PIPE_PIPE)
     EXPECT_EQ(tknlist.at(2).kind, TokenKind::ID);
     EXPECT_EQ(tknlist.at(3).kind, TokenKind::PIPE);
 }
+
+
 
 TEST(PARSE, CASE1)
 {

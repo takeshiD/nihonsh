@@ -10,18 +10,19 @@
 #include "builtin.h"
 
 Command::Command(): argc(0), argv(), status(-1), pid(-1), kind(CommandKind::EXECUTE){}
+
 Command::Command(std::vector<char*> _argv, CommandKind _kind): status(-1), pid(-1), kind(_kind)
 {
-    this->argc = _argv.size()-1;
-    this->argv = _argv;
+    this->argc = _argv.size();
+    std::copy(_argv.begin(), _argv.end(), std::back_inserter(this->argv));
+    if(this->argv.back() != NULL){
+        this->argv.push_back(NULL);
+    }
 }
 
 CommandList::CommandList(){}
 void CommandList::append(std::vector<char*> cmdchar, CommandKind kind)
 {
-    if(cmdchar.back() != NULL){
-        cmdchar.push_back(NULL);    
-    }
     this->cmdlist_.emplace_back(cmdchar, kind);
 }
 void CommandList::append(Command&& cmd)
@@ -164,7 +165,7 @@ TokenList tokenize(char* line)
         }
         if(is_rightangle_double(p)){
             tknlist.append(Token(p, TokenKind::REDIRECT_OUT_ADD));
-            p++;
+            p += 2;
             continue;
         }
         if(is_rightangle_single(p)){
@@ -172,9 +173,6 @@ TokenList tokenize(char* line)
             p++;
             continue;
         }
-        // if(is_leftangle_double(p)){
-        // not implemented yet
-        // }
         if(is_leftangle_single(p)){
             tknlist.append(Token(p, TokenKind::REDIRECT_IN));
             p++;
@@ -227,21 +225,16 @@ CommandList parse(TokenList tknlist)
     return cmdlist;
 }
 
-void execute(int argc, char* argv[])
-{
-    builtin_t* blt = lookup_builtin(argv[0]);
-    if(blt == nullptr){
-        execvp(argv[0], argv);
-    }else{
-        blt->func(argc, argv);
-    }
-}
 void execute_pipeline(CommandList& cmdlist)
 {
     int fds1[2] = {-1, -1};
     int fds2[2] = {-1, -1};
     for(Command& cmd : cmdlist)
     {
+        builtin_t* blt = lookup_builtin(cmd.argv[0]);
+        if(blt != nullptr){
+            blt->func(cmd.argc, cmd.argv.data());
+        }
         fds1[0] = fds2[0];
         fds1[1] = fds2[1];
         if(!cmdlist.is_tail(cmd)){
@@ -262,7 +255,8 @@ void execute_pipeline(CommandList& cmdlist)
             close(fds2[0]);
             
         }
-        execute(cmd.argc, cmd.argv.data());
+        if()
+        execvp(cmd.argv[0], cmd.argv.data());
         std::cerr << "execvp error(" << errno << "): " << cmd << std::endl;
     }
 }

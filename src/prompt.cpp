@@ -57,7 +57,6 @@ void prompt(const char* ps)
             TokenList tknlist = tokenize(buf);
             CommandList cmdlist = parse(tknlist);
             invoke_command(cmdlist);
-
             memset(buf, 0, BUFSIZE);
             cur = buf;
             tail = buf;
@@ -79,7 +78,7 @@ void prompt(const char* ps)
             continue;
         }
         if(c == '\x09'){ // TAB
-            complete(buf, cur, tail, BUFSIZE);
+            // complete(buf, cur, tail, BUFSIZE);
             continue;
         }
         if(c == '\x1b'){ // ESC
@@ -93,6 +92,12 @@ void prompt(const char* ps)
                         printf("\x1b[1D");
                         cur--;
                     }
+                    if(c == 'A'){ // ↑
+                        //
+                    }
+                    if(c == 'B'){ // ↓
+                        //
+                    } 
                 }
             }
         }else{ // 特殊文字以外

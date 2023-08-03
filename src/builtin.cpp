@@ -2,6 +2,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <string.h>
+#include "prompt.h"
 static int builtin_cd(int argc, char** argv)
 {
     if(argc != 2){
@@ -19,6 +20,7 @@ static int builtin_exit(int argc, char** argv)
         std::cerr << "Error: argument is not 1" << std::endl;
         return 1;
     }
+    disable_shell_mode();
     exit(0);
 }
 static int builtin_pwd(int argc, char** argv)
