@@ -5,21 +5,44 @@
 #include "parse.h"
 
 /*********   Success Case  *********/
-TEST(COMMAND, CONSTRUCTOR)
+TEST(COMMAND, CONSTRUCTOR_EMPTY)
 {
-    Command cmd1;
-    EXPECT_EQ(cmd1.argc, 0);
-    EXPECT_TRUE(cmd1.argv.empty());
-    EXPECT_EQ(cmd1.status, -1);
-    EXPECT_EQ(cmd1.pid, -1);
-
-    Command cmd2({"ls", "-la"}, CommandKind::EXECUTE);
-    EXPECT_EQ(cmd2.argc, 2);
-    EXPECT_STREQ(cmd2.argv[0], "ls");
-    EXPECT_STREQ(cmd2.argv[1], "-la");
-    EXPECT_EQ(cmd2.status, -1);
-    EXPECT_EQ(cmd2.pid, -1);
+    Command cmd;
+    EXPECT_EQ(cmd.argc, 0);
+    EXPECT_TRUE(cmd.argv.empty());
+    EXPECT_EQ(cmd.status, -1);
+    EXPECT_EQ(cmd.pid, -1);
 }
+
+TEST(COMMAND, CONSTRUCTOR_1ARGV)
+{
+    Command cmd({"ls"}, CommandKind::EXECUTE);
+    EXPECT_EQ(cmd.argc, 1);
+    EXPECT_STREQ(cmd.argv[0], "ls");
+    EXPECT_EQ(cmd.status, -1);
+    EXPECT_EQ(cmd.pid, -1);
+}
+
+TEST(COMMAND, CONSTRUCTOR_2ARGV)
+{
+    Command cmd({"ls", "-la"}, CommandKind::EXECUTE);
+    EXPECT_EQ(cmd.argc, 2);
+    EXPECT_STREQ(cmd.argv[0], "ls");
+    EXPECT_STREQ(cmd.argv[1], "-la");
+    EXPECT_EQ(cmd.status, -1);
+    EXPECT_EQ(cmd.pid, -1);
+}
+
+TEST(COMMAND, CONSTRUCTOR_BUILTIN)
+{
+    Command cmd({"exit"}, CommandKind::EXECUTE);
+    EXPECT_EQ(cmd.argc, 1);
+    EXPECT_STREQ(cmd.argv[0], "exit");
+    EXPECT_EQ(cmd.status, -1);
+    EXPECT_EQ(cmd.pid, -1);
+}
+
+
 TEST(COMMANDLIST, APPEND)
 {
     CommandList cmdlist;
@@ -32,7 +55,6 @@ TEST(COMMANDLIST, APPEND)
     EXPECT_EQ(cmdlist.at(0).argc, 2);
     EXPECT_EQ(cmdlist.at(1).argc, 3);
     EXPECT_EQ(cmdlist.at(2).argc, 3);
-
 }
 
 TEST(TOKENIZE, NO_INPUT)
@@ -124,8 +146,6 @@ TEST(TOKENIZE, PIPE_PIPE)
     EXPECT_EQ(tknlist.at(3).kind, TokenKind::PIPE);
 }
 
-
-
 TEST(PARSE, CASE1)
 {
     TokenList tknlist;
@@ -160,4 +180,14 @@ TEST(INVOKE, STDOUT)
     testing::internal::CaptureStdout();
     invoke_command(cmdlist);
     EXPECT_STREQ("02\n", testing::internal::GetCapturedStdout().c_str());
+}
+
+TEST(CHECKERS, ISSPACE)
+{
+    char space[] = " ";
+    EXPECT_TRUE(is_space(space));
+    char tab[] = "\t";
+    EXPECT_TRUE(is_space(tab));
+    char wspace[] = "　";
+    EXPECT_FALSE(is_space(wspace));
 }

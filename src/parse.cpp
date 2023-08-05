@@ -13,11 +13,9 @@ Command::Command(): argc(0), argv(), status(-1), pid(-1), kind(CommandKind::EXEC
 
 Command::Command(std::vector<char*> _argv, CommandKind _kind): status(-1), pid(-1), kind(_kind)
 {
-    this->argc = _argv.size();
     std::copy(_argv.begin(), _argv.end(), std::back_inserter(this->argv));
-    if(this->argv.back() != NULL){
-        this->argv.push_back(NULL);
-    }
+    this->argc = _argv.size();
+    this->argv.push_back(NULL);
 }
 
 CommandList::CommandList(){}
@@ -199,12 +197,14 @@ CommandList parse(TokenList tknlist)
             continue;
         }
         if(tknlist.at(i).kind == TokenKind::REDIRECT_OUT_ADD){
-            cmdlist.append(Command({}, CommandKind::REDIRECT_OUT_ADD));
+            // cmdlist.append(Command({}, CommandKind::REDIRECT_OUT_ADD));
+            cmdlist.append({}, CommandKind::REDIRECT_OUT_ADD);
             i++;
             continue;
         }
         if(tknlist.at(i).kind == TokenKind::REDIRECT_OUT_NEW){
-            cmdlist.append(Command({}, CommandKind::REDIRECT_OUT_NEW));
+            // cmdlist.append(Command({}, CommandKind::REDIRECT_OUT_NEW));
+            cmdlist.append({}, CommandKind::REDIRECT_OUT_NEW);
             i++;
             continue;
         }
@@ -217,8 +217,9 @@ CommandList parse(TokenList tknlist)
             i++;
         }
         if(!tmp.empty()){
-            tmp.push_back(NULL);
-            cmdlist.append(Command(tmp, CommandKind::EXECUTE));
+            // tmp.push_back(NULL);
+            // cmdlist.append(Command(tmp, CommandKind::EXECUTE));
+            cmdlist.append(tmp, CommandKind::EXECUTE);
             tmp.clear();
         }
     }
@@ -229,11 +230,13 @@ void execute_pipeline(CommandList& cmdlist)
 {
     int fds1[2] = {-1, -1};
     int fds2[2] = {-1, -1};
-    for(Command& cmd : cmdlist)
+    for(int i=0; i<cmdlist.size(); i++)
     {
+        Command& cmd = cmdlist.at(i);
         builtin_t* blt = lookup_builtin(cmd.argv[0]);
         if(blt != nullptr){
             blt->func(cmd.argc, cmd.argv.data());
+            continue;
         }
         fds1[0] = fds2[0];
         fds1[1] = fds2[1];
@@ -255,7 +258,6 @@ void execute_pipeline(CommandList& cmdlist)
             close(fds2[0]);
             
         }
-        if()
         execvp(cmd.argv[0], cmd.argv.data());
         std::cerr << "execvp error(" << errno << "): " << cmd << std::endl;
     }
