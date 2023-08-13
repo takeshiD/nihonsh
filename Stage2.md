@@ -100,3 +100,4 @@ simple_list1 := simple_list1 AND_AND newlines simple_list1
 | ECHOCTL | 0001000 | 11101000 | ECHO is also set, terminal special characters other than TAB,NL,START,STOP are echoed as ^X, where X is the character with ASCII code 0x40 greater than the special character(not in POSIX)|
 | ECHOPRT | 0002000 | 11010000 | If ICANON and ECHO are alse set, characters are printed as they are being erased |
 | ECHOKE  | 0004000 | 10100000 | If ICANON is alse set, KILL is echoed by erasing each character on the line, as specified by ECHOE and ECHOPRT |
+

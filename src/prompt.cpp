@@ -34,8 +34,13 @@ void disable_shell_mode() {
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_attributes);
 }
 
+static int outc(int c)
+{
+    write(1, &c, 1);
+    return c;
+}
 
-void prompt(const char* ps)
+void prompt(const char* _ps)
 {
     char* termtype = getenv("TERM");
     setupterm(termtype, 1, NULL);
@@ -44,6 +49,15 @@ void prompt(const char* ps)
     char* buf = new char[BUFSIZE];
     char* cur = buf;
     char* tail = buf;
+    char cwd[1024];
+    char ps[2048];
+    char hostname[128];
+    memset(cwd, 0, 1024);
+    memset(ps, 0, 2048);
+    memset(hostname, 0, 128);
+    getcwd(cwd, 1024);
+    gethostname(hostname, 128);
+    sprintf(ps, "%s@%s:%s$ ", _ps, hostname, cwd);
     size_t length = strlen(ps);
     printf("%s", ps);
     fflush(stdout);
@@ -60,6 +74,11 @@ void prompt(const char* ps)
             memset(buf, 0, BUFSIZE);
             cur = buf;
             tail = buf;
+            memset(cwd, 0, 1024);
+            memset(ps, 0, 2048);
+            getcwd(cwd, 1024);
+            sprintf(ps, "%s@%s:%s$ ", _ps, hostname, cwd);
+            length = strlen(ps);
             printf("%s", ps);
             fflush(stdout);
             continue;
@@ -70,9 +89,8 @@ void prompt(const char* ps)
                 memmove(cur, cur+1, tail-(cur));
                 tail--;
                 *tail = '\0';
-                printf("\x1b[1D\x1b[0K");
-                printf("%s", cur);
-                printf("\x1b[%ldG", cur-buf+1+length);
+                tputs(cursor_left, 1, outc);
+                tputs(delete_character, 1, outc);
             }
             fflush(stdout);
             continue;

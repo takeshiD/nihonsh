@@ -8,6 +8,7 @@ enum class CommandKind
     EXECUTE,
     REDIRECT_OUT_NEW,
     REDIRECT_OUT_ADD,
+    REDIRECT_IN,
 };
 
 struct Command
@@ -49,6 +50,8 @@ public:
     bool is_tail(Command& cmd);
     bool is_head(Command& cmd);
     bool is_parent(Command& cmd);
+    bool is_redirect_out(Command& cmd);
+    bool is_redirect_in(Command& cmd);
 };
 
 enum class TokenKind

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <string.h>
 #include <functional>
+#include <fcntl.h>
 #include "builtin.h"
 
 Command::Command(): argc(0), argv(), status(-1), pid(-1), kind(CommandKind::EXECUTE){}
@@ -47,6 +48,17 @@ bool CommandList::is_parent(Command& cmd)
 {
     return cmd.pid>0;
 }
+bool CommandList::is_redirect_out(Command& cmd)
+{
+    bool ret = (cmd.kind == CommandKind::REDIRECT_OUT_NEW) || (cmd.kind == CommandKind::REDIRECT_OUT_ADD);
+    return ret;
+}
+bool CommandList::is_redirect_in(Command& cmd)
+{
+    return cmd.kind == CommandKind::REDIRECT_IN;
+}
+
+
 
 std::ostream& operator<<(std::ostream& stream, const Command& cmd)
 {
@@ -54,17 +66,18 @@ std::ostream& operator<<(std::ostream& stream, const Command& cmd)
     stream << "argc=" << cmd.argc << ", ";
     if(cmd.argc > 0){
         stream << "argv={";
-        for(int i=0; i<cmd.argc-1; i++){
+        for(int i=0; i<cmd.argc; i++){
             stream << "\"" << cmd.argv[i] << "\"" << ",";
         }
-        if(cmd.argv[cmd.argc-1] == NULL){
+        if(cmd.argv[cmd.argc] == NULL){
             stream << "NULL";
         }
         stream << "}, ";
     }else{
         stream << "argv=null, ";
     }
-    stream << "pid=" << cmd.pid;
+    stream << "pid=" << cmd.pid << ", ";
+    stream << "kind=" << static_cast<int>(cmd.kind);
     stream << ")";
     return stream;
 }
@@ -197,19 +210,30 @@ CommandList parse(TokenList tknlist)
             continue;
         }
         if(tknlist.at(i).kind == TokenKind::REDIRECT_OUT_ADD){
-            // cmdlist.append(Command({}, CommandKind::REDIRECT_OUT_ADD));
-            cmdlist.append({}, CommandKind::REDIRECT_OUT_ADD);
             i++;
+            if(i >= tknlist.size()){
+                std::cerr << "[Error] redirect_outに続くファイル名がありません" << std::endl;
+                return CommandList();
+            }
+            cmdlist.append({tknlist.at(i++).str}, CommandKind::REDIRECT_OUT_ADD);
             continue;
         }
         if(tknlist.at(i).kind == TokenKind::REDIRECT_OUT_NEW){
-            // cmdlist.append(Command({}, CommandKind::REDIRECT_OUT_NEW));
-            cmdlist.append({}, CommandKind::REDIRECT_OUT_NEW);
             i++;
+            if(i >= tknlist.size()){
+                std::cerr << "[Error] redirect_outに続くファイル名がありません" << std::endl;
+                return CommandList();
+            }
+            cmdlist.append({tknlist.at(i++).str}, CommandKind::REDIRECT_OUT_NEW);
             continue;
         }
         if(tknlist.at(i).kind == TokenKind::REDIRECT_IN){
             i++;
+            if(i >= tknlist.size()){
+                std::cerr << "[Error] redirect_inに続くファイル名がありません" << std::endl;
+                return CommandList();
+            }
+            cmdlist.append({tknlist.at(i++).str}, CommandKind::REDIRECT_IN);
             continue;
         }
         while(i < tknlist.size() && tknlist.at(i).kind == TokenKind::ID){
@@ -217,8 +241,6 @@ CommandList parse(TokenList tknlist)
             i++;
         }
         if(!tmp.empty()){
-            // tmp.push_back(NULL);
-            // cmdlist.append(Command(tmp, CommandKind::EXECUTE));
             cmdlist.append(tmp, CommandKind::EXECUTE);
             tmp.clear();
         }
@@ -230,36 +252,67 @@ void execute_pipeline(CommandList& cmdlist)
 {
     int fds1[2] = {-1, -1};
     int fds2[2] = {-1, -1};
+    // std::cout << "Commands: " << cmdlist << std::endl;
     for(int i=0; i<cmdlist.size(); i++)
     {
-        Command& cmd = cmdlist.at(i);
-        builtin_t* blt = lookup_builtin(cmd.argv[0]);
+        builtin_t* blt = lookup_builtin(cmdlist.at(i).argv[0]);
         if(blt != nullptr){
-            blt->func(cmd.argc, cmd.argv.data());
+            blt->func(cmdlist.at(i).argc, cmdlist.at(i).argv.data());
+            continue;
+        }
+        if(cmdlist.is_redirect_out(cmdlist.at(i)) || cmdlist.is_redirect_in(cmdlist.at(i))){
             continue;
         }
         fds1[0] = fds2[0];
         fds1[1] = fds2[1];
-        if(!cmdlist.is_tail(cmd)){
+        if(!cmdlist.is_tail(cmdlist.at(i))){
             pipe(fds2);
         }
-        cmd.pid = fork();
-        if(cmdlist.is_parent(cmd)){
+        cmdlist.at(i).pid = fork();
+        if(cmdlist.is_parent(cmdlist.at(i))){
             if(fds1[0] != -1) close(fds1[0]);
             if(fds1[1] != -1) close(fds1[1]);
             continue;
         }
-        if(!cmdlist.is_head(cmd)){
+        // pipe
+        if(!cmdlist.is_head(cmdlist.at(i))){
             close(0); dup2(fds1[0], 0); close(fds1[0]);
             close(fds1[1]);
         }
-        if(!cmdlist.is_tail(cmd)){
+        if(!cmdlist.is_tail(cmdlist.at(i))){
             close(1); dup2(fds2[1], 1); close(fds2[1]);
             close(fds2[0]);
-            
         }
-        execvp(cmd.argv[0], cmd.argv.data());
-        std::cerr << "execvp error(" << errno << "): " << cmd << std::endl;
+        if(i+1 < cmdlist.size() && cmdlist.is_redirect_out(cmdlist.at(i+1))){ // redirect_out
+            int oflag = 0;
+            if(cmdlist.at(i+1).kind == CommandKind::REDIRECT_OUT_NEW){
+                oflag = O_WRONLY | O_CREAT | O_TRUNC;
+            }
+            else if(cmdlist.at(i+1).kind == CommandKind::REDIRECT_OUT_ADD){
+                oflag = O_WRONLY | O_CREAT | O_APPEND;
+            }
+            int fd = open(cmdlist.at(i+1).argv[0], oflag, 0666);
+            if(fd < 0){
+                std::cerr << "[Error] " << cmdlist.at(i+1).argv[0] << " was not made." << std::endl;
+                exit(1);
+            }
+            close(1);
+            dup2(fd, 1);
+            close(fd);
+        }
+        if(i+1 < cmdlist.size() && cmdlist.is_redirect_in(cmdlist.at(i+1))){ // redirect_in
+            int fd = open(cmdlist.at(i+1).argv[0], O_RDONLY | O_TRUNC);
+            if(fd < 0){
+                std::cerr << "[Error] You don't have permission to open " << cmdlist.at(i+1).argv[0] << std::endl;
+                exit(1);
+            }
+            close(0);
+            dup2(fd, 0);
+            close(fd);
+        }
+        execvp(cmdlist.at(i).argv[0], cmdlist.at(i).argv.data());
+        std::cerr << "execvp error(" << errno << "): " << cmdlist.at(i) << std::endl;
+        exit(-1);
     }
 }
 

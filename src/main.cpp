@@ -4,7 +4,7 @@
 #include <string.h>
 int main(int argc, char** argv)
 {
-    char* ps = "tkcd$ ";
+    char* ps = "tkcd";
     prompt(ps);
     return 0;
 }
