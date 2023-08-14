@@ -20,7 +20,7 @@ static int builtin_exit(int argc, char** argv)
         std::cerr << "Error: argument is not 1" << std::endl;
         return 1;
     }
-    disable_shell_mode();
+    // disable_shell_mode();
     exit(0);
 }
 static int builtin_pwd(int argc, char** argv)
