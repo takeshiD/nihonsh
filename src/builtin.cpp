@@ -1,5 +1,6 @@
 #include "builtin.h"
 #include <iostream>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include "prompt.h"
@@ -9,8 +10,15 @@ static int builtin_cd(int argc, char** argv)
         std::cerr << "Error: arguments are not 2" << std::endl;
         return 1;
     }
-    if(chdir(argv[1]) < 0){
-        std::perror(argv[1]);
+    char* path = (char*)calloc(1, strlen(argv[1]));
+    memcpy(path, argv[1], strlen(argv[1]));
+    if(strncmp(path, "~", 1) == 0){
+        char* tmphome = getenv("HOME");
+        memmove(path+strlen(tmphome), path+1, strlen(path));
+        memcpy(path, tmphome, strlen(tmphome));
+    }
+    if(chdir(path) < 0){
+        std::perror(path);
     }
     return 0;
 }
@@ -20,7 +28,6 @@ static int builtin_exit(int argc, char** argv)
         std::cerr << "Error: argument is not 1" << std::endl;
         return 1;
     }
-    // disable_shell_mode();
     exit(0);
 }
 static int builtin_pwd(int argc, char** argv)

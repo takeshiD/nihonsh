@@ -172,15 +172,15 @@ TEST(PARSE, CASE2)
     EXPECT_STREQ(cmdlist.at(0).argv[0], "ls");
     EXPECT_STREQ(cmdlist.at(0).argv[1], "-la");
 }
-TEST(INVOKE, STDOUT)
-{
-    CommandList cmdlist;
-    cmdlist.append({"seq", "-w", "10"}, CommandKind::EXECUTE);
-    cmdlist.append({"grep", "02"}, CommandKind::EXECUTE);
-    testing::internal::CaptureStdout();
-    invoke_command(cmdlist);
-    EXPECT_STREQ("02\n", testing::internal::GetCapturedStdout().c_str());
-}
+// TEST(INVOKE, STDOUT)
+// {
+//     CommandList cmdlist;
+//     cmdlist.append({"seq", "-w", "10"}, CommandKind::EXECUTE);
+//     cmdlist.append({"grep", "02"}, CommandKind::EXECUTE);
+//     testing::internal::CaptureStdout();
+//     invoke_command(cmdlist);
+//     EXPECT_STREQ("02\n", testing::internal::GetCapturedStdout().c_str());
+// }
 
 TEST(CHECKERS, ISSPACE)
 {

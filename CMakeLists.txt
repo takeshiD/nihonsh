@@ -10,6 +10,7 @@ set(SRCS
     src/parse.cpp
     src/complete.cpp
     src/builtin.cpp
+    src/jobs.cpp
 )
 add_executable(${TARGET}
     src/main.cpp

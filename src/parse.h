@@ -18,6 +18,8 @@ struct Command
     int status;
     CommandKind kind;
     pid_t pid;
+    bool stopped;
+    bool completed;
     Command();
     Command(std::vector<char*> _argv, CommandKind _kind);
 };
@@ -52,6 +54,7 @@ public:
     bool is_parent(Command& cmd);
     bool is_redirect_out(Command& cmd);
     bool is_redirect_in(Command& cmd);
+    bool foreground;
 };
 
 enum class TokenKind
@@ -62,6 +65,7 @@ enum class TokenKind
     REDIRECT_IN,
     REDIRECT_OUT_NEW,
     REDIRECT_OUT_ADD,
+    AND,
 };
 
 struct Token

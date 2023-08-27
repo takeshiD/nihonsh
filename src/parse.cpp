@@ -10,16 +10,16 @@
 #include <fcntl.h>
 #include "builtin.h"
 
-Command::Command(): argc(0), argv(), status(-1), pid(-1), kind(CommandKind::EXECUTE){}
+Command::Command(): argc(0), argv(), status(-1), pid(-1), kind(CommandKind::EXECUTE), stopped(false), completed(false){}
 
-Command::Command(std::vector<char*> _argv, CommandKind _kind): status(-1), pid(-1), kind(_kind)
+Command::Command(std::vector<char*> _argv, CommandKind _kind): status(-1), pid(-1), kind(_kind), stopped(false), completed(false)
 {
     std::copy(_argv.begin(), _argv.end(), std::back_inserter(this->argv));
     this->argc = _argv.size();
     this->argv.push_back(NULL);
 }
 
-CommandList::CommandList(){}
+CommandList::CommandList(): foreground(true){}
 void CommandList::append(std::vector<char*> cmdchar, CommandKind kind)
 {
     this->cmdlist_.emplace_back(cmdchar, kind);
@@ -149,6 +149,10 @@ bool is_rightangle_double(char* c)
 {
     return strncmp(c, ">>", 2) == 0;
 }
+bool is_ampersand(char* c)
+{
+    return *c == '&';
+}
 
 bool is_reserved(char* c)
 {
@@ -186,6 +190,11 @@ TokenList tokenize(char* line)
         }
         if(is_leftangle_single(p)){
             tknlist.append(Token(p, TokenKind::REDIRECT_IN));
+            p++;
+            continue;
+        }
+        if(is_ampersand(p)){
+            tknlist.append(Token(p, TokenKind::AND));
             p++;
             continue;
         }
@@ -236,6 +245,15 @@ CommandList parse(TokenList tknlist)
             cmdlist.append({tknlist.at(i++).str}, CommandKind::REDIRECT_IN);
             continue;
         }
+        if(tknlist.at(i).kind == TokenKind::AND){
+            if(i == tknlist.size()-1){
+                cmdlist.foreground = false;
+                break;
+            }else{
+                std::cerr << "[Error] &は終端でなければいけません" << std::endl;
+                return CommandList();
+            }
+        }
         while(i < tknlist.size() && tknlist.at(i).kind == TokenKind::ID){
             tmp.emplace_back(tknlist.at(i).str);
             i++;
@@ -246,84 +264,4 @@ CommandList parse(TokenList tknlist)
         }
     }
     return cmdlist;
-}
-
-void execute_pipeline(CommandList& cmdlist)
-{
-    int fds1[2] = {-1, -1};
-    int fds2[2] = {-1, -1};
-    // std::cout << "Commands: " << cmdlist << std::endl;
-    for(int i=0; i<cmdlist.size(); i++)
-    {
-        builtin_t* blt = lookup_builtin(cmdlist.at(i).argv[0]);
-        if(blt != nullptr){
-            blt->func(cmdlist.at(i).argc, cmdlist.at(i).argv.data());
-            continue;
-        }
-        if(cmdlist.is_redirect_out(cmdlist.at(i)) || cmdlist.is_redirect_in(cmdlist.at(i))){
-            continue;
-        }
-        fds1[0] = fds2[0];
-        fds1[1] = fds2[1];
-        if(!cmdlist.is_tail(cmdlist.at(i))){
-            pipe(fds2);
-        }
-        cmdlist.at(i).pid = fork();
-        if(cmdlist.is_parent(cmdlist.at(i))){
-            if(fds1[0] != -1) close(fds1[0]);
-            if(fds1[1] != -1) close(fds1[1]);
-            continue;
-        }
-        // pipe
-        if(!cmdlist.is_head(cmdlist.at(i))){
-            close(0); dup2(fds1[0], 0); close(fds1[0]);
-            close(fds1[1]);
-        }
-        if(!cmdlist.is_tail(cmdlist.at(i))){
-            close(1); dup2(fds2[1], 1); close(fds2[1]);
-            close(fds2[0]);
-        }
-        if(i+1 < cmdlist.size() && cmdlist.is_redirect_out(cmdlist.at(i+1))){ // redirect_out
-            int oflag = 0;
-            if(cmdlist.at(i+1).kind == CommandKind::REDIRECT_OUT_NEW){
-                oflag = O_WRONLY | O_CREAT | O_TRUNC;
-            }
-            else if(cmdlist.at(i+1).kind == CommandKind::REDIRECT_OUT_ADD){
-                oflag = O_WRONLY | O_CREAT | O_APPEND;
-            }
-            int fd = open(cmdlist.at(i+1).argv[0], oflag, 0666);
-            if(fd < 0){
-                std::cerr << "[Error] " << cmdlist.at(i+1).argv[0] << " was not made." << std::endl;
-                exit(1);
-            }
-            close(1);
-            dup2(fd, 1);
-            close(fd);
-        }
-        if(i+1 < cmdlist.size() && cmdlist.is_redirect_in(cmdlist.at(i+1))){ // redirect_in
-            int fd = open(cmdlist.at(i+1).argv[0], O_RDONLY | O_TRUNC);
-            if(fd < 0){
-                std::cerr << "[Error] You don't have permission to open " << cmdlist.at(i+1).argv[0] << std::endl;
-                exit(1);
-            }
-            close(0);
-            dup2(fd, 0);
-            close(fd);
-        }
-        execvp(cmdlist.at(i).argv[0], cmdlist.at(i).argv.data());
-        std::cerr << "execvp error(" << errno << "): " << cmdlist.at(i) << std::endl;
-        exit(-1);
-    }
-}
-
-void wait_pipeline(CommandList& cmdlist)
-{
-    std::for_each(cmdlist.rbegin(), cmdlist.rend(), [](Command cmd){
-        waitpid(cmd.pid, &cmd.status, 0);
-    });
-}
-void invoke_command(CommandList& cmdlist)
-{
-    execute_pipeline(cmdlist);
-    wait_pipeline(cmdlist);
 }
