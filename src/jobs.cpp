@@ -6,6 +6,7 @@
 #include <termios.h>
 #include <algorithm>
 #include <vector>
+#include <iomanip>
 
 
 extern JobList joblist;
@@ -16,15 +17,25 @@ void do_job_notification(int signum)
     {
         if(j.is_completed())
         {
-            fprintf(stdout, "[%d] completed\n", j.pgid);
+            std::cout << "[" << j.pgid << "] ";
+            std::cout << std::setw(13) << "completed";
+            std::cout << j.cmdlist_;
+            std::cout << std::endl;
         }
         else if(!j.notified && j.is_stopped())
         {
-            fprintf(stdout, "[%d] stopped\n", j.pgid);
+            std::cout << "[" << j.pgid << "] ";
+            std::cout << std::setw(13) << "stopped";
+            std::cout << j.cmdlist_;
+            std::cout << std::endl;
             j.notified = true;
         }
         else{
-            fprintf(stdout, "[%d] running\n", j.pgid);
+            std::cout << "[" << j.pgid << "] ";
+            std::cout << std::setw(13) << "running";
+            std::cout << j.cmdlist_;
+            std::cout << std::endl;
+            std::cout << j.cmdlist_ << std::endl;
         }
     }
 }
@@ -78,6 +89,18 @@ void JobList::append_(Job& job)
 {
     joblist_.emplace_back(job);
 }
+void JobList::append_(Job&& job)
+{
+    joblist_.emplace_back(job);
+}
+Job& JobList::at_(int idx)
+{
+    return joblist_.at(idx);
+}
+std::size_t JobList::size_() const
+{
+    return joblist_.size();
+}
 
 void JobList::launch_process_(Command& cmd, pid_t pgid, int infile, int outfile, bool foreground)
 {
@@ -108,7 +131,7 @@ void JobList::launch_process_(Command& cmd, pid_t pgid, int infile, int outfile,
 
 void JobList::launch_job_(Job& job, bool foreground)
 {
-    append_(job);
+    // append_(job);
     int fds[2] = {-1, -1};
     int infile, outfile;
     infile = job.stdin;
@@ -134,14 +157,18 @@ void JobList::launch_job_(Job& job, bool foreground)
         }else if(job.cmdlist_.at(i).pid < 0){
             std::cerr << "Error: fork" << std::endl;
             exit(1);
+        }else{ // parent proces
+            if(job.pgid <= 0){ job.pgid = job.cmdlist_.at(i).pid;}
+            setpgid(job.cmdlist_.at(i).pid, job.pgid);
         }
         if(infile  != job.stdin){  close(infile);}
         if(outfile != job.stdout){ close(outfile);}
         infile = fds[0];
     }
+    append_(job);
     if(foreground){
         tcsetpgrp(shell_terminal_fd_, job.pgid);
-        wait_job_(job);
+        wait_job_(joblist.at_(joblist.size_()-1));
         tcsetpgrp(shell_terminal_fd_, shell_pgid_);
     }
 }
@@ -182,7 +209,8 @@ bool JobList::search_process_(pid_t pid, int status)
                         if(WIFSIGNALED(status))
                         {
                             // シグナルによるkill
-                            fprintf(stderr, "%d: Terminated by signal %d.", pid, WTERMSIG(cmd.status));
+                            // fprintf(stderr, "%d: Terminated by signal %d.", pid, WTERMSIG(cmd.status));
+                            std::cerr << pid << ": Terminated by signal " << WTERMSIG(cmd.status) << std::endl;
                         }
                     }
                     return true;
