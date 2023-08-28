@@ -174,33 +174,38 @@ TokenList tokenize(char* line)
             continue;
         }
         if(is_pipe(p)){
-            tknlist.append(Token(p, TokenKind::PIPE));
+            tknlist.append(Token(p, 1, TokenKind::PIPE));
             p++;
             continue;
         }
         if(is_rightangle_double(p)){
-            tknlist.append(Token(p, TokenKind::REDIRECT_OUT_ADD));
+            tknlist.append(Token(p, 2, TokenKind::REDIRECT_OUT_ADD));
             p += 2;
             continue;
         }
         if(is_rightangle_single(p)){
-            tknlist.append(Token(p, TokenKind::REDIRECT_OUT_NEW));
+            tknlist.append(Token(p, 1, TokenKind::REDIRECT_OUT_NEW));
             p++;
             continue;
         }
         if(is_leftangle_single(p)){
-            tknlist.append(Token(p, TokenKind::REDIRECT_IN));
+            tknlist.append(Token(p, 1, TokenKind::REDIRECT_IN));
             p++;
             continue;
         }
         if(is_ampersand(p)){
-            tknlist.append(Token(p, TokenKind::AND));
+            tknlist.append(Token(p, 1, TokenKind::AND));
             p++;
             continue;
         }
         if(is_identifier(p)){
-            tknlist.append(Token(p, TokenKind::ID));
-            while(*p && is_identifier(p)) p++;
+            char* _p = p;
+            while(*_p && is_identifier(_p)) _p++;
+            if(is_space(_p)){ *_p = '\0';}
+            int n = _p - p + 1;
+            tknlist.append(Token(p, n, TokenKind::ID));
+            p = _p;
+            p++;
             continue;
         }
     }

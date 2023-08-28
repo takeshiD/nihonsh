@@ -149,10 +149,10 @@ TEST(TOKENIZE, PIPE_PIPE)
 TEST(PARSE, CASE1)
 {
     TokenList tknlist;
-    tknlist.append(Token("|", TokenKind::PIPE));
-    tknlist.append(Token("ls", TokenKind::ID));
-    tknlist.append(Token("-la", TokenKind::ID));
-    tknlist.append(Token("|", TokenKind::ID));
+    tknlist.append(Token("|", 1, TokenKind::PIPE));
+    tknlist.append(Token("ls", 2, TokenKind::ID));
+    tknlist.append(Token("-la", 3, TokenKind::ID));
+    tknlist.append(Token("|", 1, TokenKind::ID));
     CommandList cmdlist = parse(tknlist);
     EXPECT_STREQ(cmdlist.at(0).argv[0], "ls");
     EXPECT_STREQ(cmdlist.at(0).argv[1], "-la");
@@ -162,12 +162,12 @@ TEST(PARSE, CASE2)
 {
     char line[256] = "ls -la | grep -e pipe";
     TokenList tknlist;
-    tknlist.append(Token("ls",  TokenKind::ID));
-    tknlist.append(Token("-la", TokenKind::ID));
-    tknlist.append(Token("|",   TokenKind::PIPE));
-    tknlist.append(Token("grep",TokenKind::ID));
-    tknlist.append(Token("-e",  TokenKind::ID));
-    tknlist.append(Token("pipe",TokenKind::ID));
+    tknlist.append(Token("ls",  2, TokenKind::ID));
+    tknlist.append(Token("-la", 3, TokenKind::ID));
+    tknlist.append(Token("|",   1, TokenKind::PIPE));
+    tknlist.append(Token("grep",4, TokenKind::ID));
+    tknlist.append(Token("-e",  2, TokenKind::ID));
+    tknlist.append(Token("pipe",4, TokenKind::ID));
     CommandList cmdlist = parse(tknlist);
     EXPECT_STREQ(cmdlist.at(0).argv[0], "ls");
     EXPECT_STREQ(cmdlist.at(0).argv[1], "-la");

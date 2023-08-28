@@ -37,6 +37,7 @@ void prompt(const char* _ps)
     char hostname[128];
     char home[128];
     char name[128];
+    memset(buf, 0, BUFSIZE);
     memset(cwd, 0, 1024);
     memset(ps, 0, 2048);
     memset(hostname, 0, 128);
@@ -69,8 +70,7 @@ void prompt(const char* _ps)
             TokenList tknlist = tokenize(buf);
             CommandList cmdlist = parse(tknlist);
             if(cmdlist.size() > 0){
-                Job j(cmdlist);
-                joblist.launch_job_(j, cmdlist.foreground);
+                joblist.launch_job_(cmdlist, cmdlist.foreground);
             }
             joblist.term_state_.change_shell_mode_();
             memset(buf, 0, BUFSIZE);

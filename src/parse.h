@@ -2,6 +2,7 @@
 #define PARSE_H
 #include <iostream>
 #include <vector>
+#include <string.h>
 
 enum class CommandKind
 {
@@ -72,7 +73,11 @@ struct Token
 {
     char* str;
     TokenKind kind;
-    Token(char* _str, TokenKind _kind):str(_str),kind(_kind){}
+    Token(char* _str, int _n, TokenKind _kind):kind(_kind){
+        str = new char[_n];
+        memset(str, 0, _n);
+        strncpy(str, _str, _n);
+    }
 };
 class TokenList
 {

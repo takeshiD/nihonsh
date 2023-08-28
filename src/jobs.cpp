@@ -18,24 +18,23 @@ void do_job_notification(int signum)
         if(j.is_completed())
         {
             std::cout << "[" << j.pgid << "] ";
-            std::cout << std::setw(13) << "completed";
+            std::cout << std::left << std::setw(13) << "completed";
             std::cout << j.cmdlist_;
             std::cout << std::endl;
         }
         else if(!j.notified && j.is_stopped())
         {
             std::cout << "[" << j.pgid << "] ";
-            std::cout << std::setw(13) << "stopped";
+            std::cout << std::left << std::setw(13) << "stopped";
             std::cout << j.cmdlist_;
             std::cout << std::endl;
             j.notified = true;
         }
         else{
             std::cout << "[" << j.pgid << "] ";
-            std::cout << std::setw(13) << "running";
+            std::cout << std::left << std::setw(13) << "running";
             std::cout << j.cmdlist_;
             std::cout << std::endl;
-            std::cout << j.cmdlist_ << std::endl;
         }
     }
 }
@@ -85,13 +84,10 @@ JobList::JobList(): shell_terminal_fd_(STDIN_FILENO), shell_pgid_(0)
     term_state_.change_shell_mode_();
 }
 
-void JobList::append_(Job& job)
+void JobList::append_(Job job)
 {
-    joblist_.emplace_back(job);
-}
-void JobList::append_(Job&& job)
-{
-    joblist_.emplace_back(job);
+    // joblist_.emplace_back(job);
+    joblist_.push_back(job);
 }
 Job& JobList::at_(int idx)
 {
@@ -129,9 +125,9 @@ void JobList::launch_process_(Command& cmd, pid_t pgid, int infile, int outfile,
     exit(1);
 }
 
-void JobList::launch_job_(Job& job, bool foreground)
+void JobList::launch_job_(CommandList cmdlist, bool foreground)
 {
-    // append_(job);
+    Job job(cmdlist);
     int fds[2] = {-1, -1};
     int infile, outfile;
     infile = job.stdin;
