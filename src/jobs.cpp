@@ -86,8 +86,7 @@ JobList::JobList(): shell_terminal_fd_(STDIN_FILENO), shell_pgid_(0)
 
 void JobList::append_(Job job)
 {
-    // joblist_.emplace_back(job);
-    joblist_.push_back(job);
+    joblist_.emplace_back(job);
 }
 Job& JobList::at_(int idx)
 {
