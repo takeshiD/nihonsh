@@ -159,6 +159,7 @@ void JobList::launch_job_(CommandList cmdlist, bool foreground)
         builtin_t* blt = lookup_builtin(job.cmdlist_.at(i).argv[0]);
         if(blt != nullptr){
             blt->func(job.cmdlist_.at(i).argc, job.cmdlist_.at(i).argv.data());
+            job.cmdlist_.at(i).completed = true;
             continue;
         }
         if(job.cmdlist_.is_redirect_out(job.cmdlist_.at(i)) || job.cmdlist_.is_redirect_in(job.cmdlist_.at(i))){
