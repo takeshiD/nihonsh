@@ -104,15 +104,11 @@ public:
 
     JobList();
     void append_(Job job);
-    // void append_(Job&& job);
     Job& at_(int idx);
     std::size_t size_() const;
     void set_sigaction();
     void wait_job_(Job& job);
     bool search_process_(pid_t pid, int status);
-    bool job_is_stopped_(Job& job);
-    bool job_is_completed_(Job& job);
-    // void launch_job_(Job job, bool foreground);
     void launch_job_(CommandList cmdlist, bool foreground);
     void launch_process_(Command& cmd, pid_t pgid, int infile, int outfile, bool foreground);
 };

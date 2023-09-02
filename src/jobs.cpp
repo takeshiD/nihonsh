@@ -188,7 +188,7 @@ void JobList::wait_job_(Job& job)
             perror("waitpid");
         }
         std::cout << job.cmdlist_ << std::endl;
-    }while(search_process_(pid, status) && !job_is_stopped_(job) && !job_is_completed_(job));
+    }while(search_process_(pid, status) && !job.is_completed() && !job.is_stopped());
 }
 
 bool JobList::search_process_(pid_t pid, int status)
@@ -215,7 +215,6 @@ bool JobList::search_process_(pid_t pid, int status)
                         if(WIFSIGNALED(status))
                         {
                             // シグナルによるkill
-                            // fprintf(stderr, "%d: Terminated by signal %d.", pid, WTERMSIG(cmd.status));
                             std::cerr << pid << ": Terminated by signal " << WTERMSIG(cmd.status) << std::endl;
                         }
                     }
@@ -234,22 +233,4 @@ bool JobList::search_process_(pid_t pid, int status)
         perror("waitpid");
         return false;
     }
-}
-
-bool JobList::job_is_stopped_(Job& job)
-{
-    for(Command& cmd: job.cmdlist_)
-    {
-        if(!cmd.completed && !cmd.stopped){ return false;}
-    }
-    return true;
-}
-
-bool JobList::job_is_completed_(Job& job)
-{
-    for(Command& cmd: job.cmdlist_)
-    {
-        if(!cmd.completed){ return false;}
-    }
-    return true;
 }
