@@ -84,6 +84,16 @@ JobList::JobList(): shell_terminal_fd_(STDIN_FILENO), shell_pgid_(0)
     term_state_.change_shell_mode_();
 }
 
+void JobList::set_sigaction()
+{
+    sigaction(SIGINT,  &ignore_, NULL);
+    sigaction(SIGQUIT, &ignore_, NULL);
+    sigaction(SIGTSTP, &ignore_, NULL);
+    sigaction(SIGTTIN, &ignore_, NULL);
+    sigaction(SIGTTOU, &ignore_, NULL);
+    sigaction(SIGCHLD, &notify_, NULL);
+}
+
 void JobList::append_(Job job)
 {
     joblist_.emplace_back(job);
@@ -177,7 +187,8 @@ void JobList::wait_job_(Job& job)
         if(pid < 0){
             perror("waitpid");
         }
-    }while(!search_process_(pid, status) && job_is_running_(job));
+        std::cout << job.cmdlist_ << std::endl;
+    }while(search_process_(pid, status) && !job_is_stopped_(job) && !job_is_completed_(job));
 }
 
 bool JobList::search_process_(pid_t pid, int status)
@@ -225,11 +236,20 @@ bool JobList::search_process_(pid_t pid, int status)
     }
 }
 
-bool JobList::job_is_running_(Job& job)
+bool JobList::job_is_stopped_(Job& job)
 {
     for(Command& cmd: job.cmdlist_)
     {
         if(!cmd.completed && !cmd.stopped){ return false;}
+    }
+    return true;
+}
+
+bool JobList::job_is_completed_(Job& job)
+{
+    for(Command& cmd: job.cmdlist_)
+    {
+        if(!cmd.completed){ return false;}
     }
     return true;
 }

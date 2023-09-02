@@ -73,6 +73,7 @@ void prompt(const char* _ps)
                 joblist.launch_job_(cmdlist, cmdlist.foreground);
             }
             joblist.term_state_.change_shell_mode_();
+            joblist.set_sigaction();
             memset(buf, 0, BUFSIZE);
             cur = buf;
             tail = buf;
@@ -83,7 +84,7 @@ void prompt(const char* _ps)
                 memmove(cwd, cwd+strlen(home)-1, strlen(cwd));
                 cwd[0] = '~';
             }
-            sprintf(ps, "%s@%s:%s$ ", name, hostname, cwd);
+            sprintf(ps, "[pid=%d]%s@%s:%s$ ", getpid(), name, hostname, cwd);
             length = strlen(ps);
             tputs(ps, 1, outc);
             continue;
