@@ -13,7 +13,6 @@ extern JobList joblist;
 
 void do_job_notification(int signum)
 {
-    // for(Job& j: joblist)
     std::vector<int> remove_elements;
     for(int i=0; i<joblist.size_(); i++)
     {
@@ -40,12 +39,10 @@ void do_job_notification(int signum)
             std::cout << std::endl;
         }
     }
-    std::cout << "jobs: " << joblist.size_();
     for(int i: remove_elements)
     {
         joblist.erase_(std::cbegin(joblist) + i);
     }
-    std::cout << " -> " << joblist.size_() << std::endl;
 }
 
 bool Job::is_completed()
