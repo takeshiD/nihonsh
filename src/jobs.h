@@ -104,6 +104,7 @@ public:
 
     JobList();
     void append_(Job job);
+    iterator erase_(const_iterator position);
     Job& at_(int idx);
     std::size_t size_() const;
     void set_sigaction();

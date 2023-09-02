@@ -13,30 +13,39 @@ extern JobList joblist;
 
 void do_job_notification(int signum)
 {
-    for(Job& j: joblist)
+    // for(Job& j: joblist)
+    std::vector<int> remove_elements;
+    for(int i=0; i<joblist.size_(); i++)
     {
-        if(j.is_completed())
+        if(joblist.at_(i).is_completed())
         {
-            std::cout << "[" << j.pgid << "] ";
+            std::cout << "[" << joblist.at_(i).pgid << "] ";
             std::cout << std::left << std::setw(13) << "completed";
-            std::cout << j.cmdlist_;
+            std::cout << joblist.at_(i).cmdlist_;
             std::cout << std::endl;
+            remove_elements.push_back(i);
         }
-        else if(!j.notified && j.is_stopped())
+        else if(!joblist.at_(i).notified && joblist.at_(i).is_stopped())
         {
-            std::cout << "[" << j.pgid << "] ";
+            std::cout << "[" << joblist.at_(i).pgid << "] ";
             std::cout << std::left << std::setw(13) << "stopped";
-            std::cout << j.cmdlist_;
+            std::cout << joblist.at_(i).cmdlist_;
             std::cout << std::endl;
-            j.notified = true;
+            joblist.at_(i).notified = true;
         }
         else{
-            std::cout << "[" << j.pgid << "] ";
+            std::cout << "[" << joblist.at_(i).pgid << "] ";
             std::cout << std::left << std::setw(13) << "running";
-            std::cout << j.cmdlist_;
+            std::cout << joblist.at_(i).cmdlist_;
             std::cout << std::endl;
         }
     }
+    std::cout << "jobs: " << joblist.size_();
+    for(int i: remove_elements)
+    {
+        joblist.erase_(std::cbegin(joblist) + i);
+    }
+    std::cout << " -> " << joblist.size_() << std::endl;
 }
 
 bool Job::is_completed()
@@ -105,6 +114,11 @@ Job& JobList::at_(int idx)
 std::size_t JobList::size_() const
 {
     return joblist_.size();
+}
+
+JobList::iterator JobList::erase_(JobList::const_iterator position)
+{
+    return joblist_.erase(position);
 }
 
 void JobList::launch_process_(Command& cmd, pid_t pgid, int infile, int outfile, bool foreground)
@@ -187,7 +201,6 @@ void JobList::wait_job_(Job& job)
         if(pid < 0){
             perror("waitpid");
         }
-        std::cout << job.cmdlist_ << std::endl;
     }while(search_process_(pid, status) && !job.is_completed() && !job.is_stopped());
 }
 

@@ -84,7 +84,7 @@ void prompt(const char* _ps)
                 memmove(cwd, cwd+strlen(home)-1, strlen(cwd));
                 cwd[0] = '~';
             }
-            sprintf(ps, "[pid=%d]%s@%s:%s$ ", getpid(), name, hostname, cwd);
+            sprintf(ps, "%s@%s:%s$ ", name, hostname, cwd);
             length = strlen(ps);
             tputs(ps, 1, outc);
             continue;
