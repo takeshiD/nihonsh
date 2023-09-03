@@ -33,10 +33,11 @@ void do_job_notification(int signum)
             joblist.at_(i).notified = true;
         }
         else{
-            std::cout << "[" << joblist.at_(i).pgid << "] ";
-            std::cout << std::left << std::setw(13) << "running";
-            std::cout << joblist.at_(i).cmdlist_;
-            std::cout << std::endl;
+            // running: 何も表示しない
+            // std::cout << "[" << joblist.at_(i).pgid << "] ";
+            // std::cout << std::left << std::setw(13) << "running";
+            // std::cout << joblist.at_(i).cmdlist_;
+            // std::cout << std::endl;
         }
     }
     for(int i: remove_elements)
