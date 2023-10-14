@@ -18,18 +18,18 @@ void do_job_notification(int signum)
     {
         if(joblist.at_(i).is_completed())
         {
-            std::cout << "[" << joblist.at_(i).pgid << "] ";
-            std::cout << std::left << std::setw(13) << "completed";
-            std::cout << joblist.at_(i).cmdlist_;
-            std::cout << std::endl;
+            // std::cout << "[" << joblist.at_(i).pgid << "] ";
+            // std::cout << std::left << std::setw(13) << "completed";
+            // std::cout << joblist.at_(i).cmdlist_;
+            // std::cout << std::endl;
             remove_elements.push_back(i);
         }
         else if(!joblist.at_(i).notified && joblist.at_(i).is_stopped())
         {
-            std::cout << "[" << joblist.at_(i).pgid << "] ";
-            std::cout << std::left << std::setw(13) << "stopped";
-            std::cout << joblist.at_(i).cmdlist_;
-            std::cout << std::endl;
+            // std::cout << "[" << joblist.at_(i).pgid << "] ";
+            // std::cout << std::left << std::setw(13) << "stopped";
+            // std::cout << joblist.at_(i).cmdlist_;
+            // std::cout << std::endl;
             joblist.at_(i).notified = true;
         }
         else{
@@ -141,6 +141,7 @@ void JobList::launch_process_(Command& cmd, pid_t pgid, int infile, int outfile,
         dup2(outfile, STDOUT_FILENO);
         close(outfile);
     }
+    // std::cerr << "execv: " << cmd.argv[0] << ", in:" << infile << ", out:" << outfile << std::endl;
     execvp(cmd.argv[0], cmd.argv.data());
     perror("execvp");
     exit(1);
@@ -160,7 +161,10 @@ void JobList::launch_job_(CommandList cmdlist, bool foreground)
             job.cmdlist_.at(i).completed = true;
             continue;
         }
-        if(job.cmdlist_.is_redirect_out(job.cmdlist_.at(i)) || job.cmdlist_.is_redirect_in(job.cmdlist_.at(i))){
+        if(job.cmdlist_.is_redirect_out(job.cmdlist_.at(i))){
+            continue;
+        }
+        if(job.cmdlist_.is_redirect_in(job.cmdlist_.at(i))){
             continue;
         }
         if(!job.cmdlist_.is_tail(job.cmdlist_.at(i))){
@@ -169,7 +173,32 @@ void JobList::launch_job_(CommandList cmdlist, bool foreground)
         }else{
             outfile = job.stdout;
         }
-        job.cmdlist_.at(i).pid = fork();
+        if(i+1<job.cmdlist_.size()  && job.cmdlist_.is_redirect_out(job.cmdlist_.at(i+1))){
+            int fd = -1;
+            if(job.cmdlist_.at(i+1).kind == CommandKind::REDIRECT_OUT_NEW){
+                fd = open(job.cmdlist_.at(i+1).argv[0], O_WRONLY | O_TRUNC | O_CREAT, 0666);
+            }
+            if(job.cmdlist_.at(i+1).kind == CommandKind::REDIRECT_OUT_ADD){
+                fd = open(job.cmdlist_.at(i+1).argv[0], O_WRONLY | O_APPEND | O_CREAT, 0666);
+            }
+            if(fd < 0){
+                std::cerr << "File Open Failed: " << job.cmdlist_.at(i+1).argv[0] << std::endl;
+                exit(1); 
+            }
+            outfile = fd;
+            std::cerr << "REDIRECT_OUT: " << outfile << std::endl;
+        }
+        if(i+1<job.cmdlist_.size()  && job.cmdlist_.is_redirect_in(job.cmdlist_.at(i+1))){
+            int fd = open(job.cmdlist_.at(i+1).argv[0], O_RDONLY);
+            if(fd < 0){
+                std::cerr << "File Open Failed: " << job.cmdlist_.at(i+1).argv[0] << std::endl;
+                exit(1); 
+            }
+            infile = fd;
+            outfile = job.stdout;
+            std::cerr << "REDIRECT_IN: " << infile << std::endl;
+        }
+        job.cmdlist_.at(i).pid = fork(); 
         if(job.cmdlist_.at(i).pid == 0){ // child process
             launch_process_(job.cmdlist_.at(i), job.pgid, infile, outfile, foreground);
         }else if(job.cmdlist_.at(i).pid < 0){
